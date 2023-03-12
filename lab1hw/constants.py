@@ -5,8 +5,16 @@ MAX_NUM_OF_CLIENTS: Final[int] = 2
 IP: Final[str] = "localhost"
 PORT: Final[int] = 8000
 
-MAX_BUF_SIZE: Final[int] = 1024  # TODO: include nick and colon size, assert here
+MAX_BUF_SIZE: Final[int] = 1024
 
 MESSAGE: Final[str] = "{nick}:{message}"
 ENCODING: Final[str] = "utf-8"
 INIT_MSG: Final[str] = "INIT"
+
+UDP_UNICAST_MSG: Final[str] = "U"
+
+ASCII_ART: Final[str] = """
+ |\\__/,|   (`\\
+ |_ _  |.--.) )
+ ( T   )     /
+(((^_(((/(((_/"""
