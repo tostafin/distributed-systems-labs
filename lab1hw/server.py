@@ -11,6 +11,7 @@ def handle_client(client: socket.socket) -> None:
     buf: bytes
     while buf := client.recv(MAX_BUF_SIZE):
         if (message := buf.decode(ENCODING)) == INIT_MSG:
+            print("New client has connected.")
             print(client)
             clients.add(client)
         else:

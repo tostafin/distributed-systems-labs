@@ -6,13 +6,9 @@ from constants import IP, PORT, MAX_BUF_SIZE, MESSAGE, ENCODING, INIT_MSG
 
 def receive_data_from_server(client: socket.socket):
     buf: bytes
-    try:
-        while buf := client.recv(MAX_BUF_SIZE):
-            nick, _, message = buf.decode(ENCODING).partition(":")
-            print(f"Message from {nick}: {message}")
-
-    except KeyboardInterrupt:
-            pass
+    while buf := client.recv(MAX_BUF_SIZE):
+        nick, _, message = buf.decode(ENCODING).partition(":")
+        print(f"Message from {nick}: {message}")
 
 
 if __name__ == "__main__":
@@ -23,7 +19,7 @@ if __name__ == "__main__":
         try:
             nick = input("Your nick: ")
             client_socket.sendall(bytes(INIT_MSG, ENCODING))
-            print("You're connected to the server. You can send and receive messages now.")
+            print("You're connected to the server. You can now send and receive messages.")
             server_data_receiver = Thread(target=receive_data_from_server, args=(client_socket,), daemon=True)
             server_data_receiver.start()
             while True:
