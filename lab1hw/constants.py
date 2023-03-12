@@ -1,6 +1,6 @@
 from typing import Final
 
-NUM_OF_CLIENTS: Final[int] = 2
+MAX_NUM_OF_CLIENTS: Final[int] = 2
 
 IP: Final[str] = "localhost"
 PORT: Final[int] = 8000
