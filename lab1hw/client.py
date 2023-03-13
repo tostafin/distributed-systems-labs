@@ -5,7 +5,7 @@ import struct
 
 from threading import Thread
 
-from constants import IP, PORT, MULTICAST_TTL, MAX_BUF_SIZE, MESSAGE, ENCODING, INIT_MSG, UDP_UNICAST_MSG, UDP_MULTICAST_MSG, ASCII_ART
+from constants import IP, PORT, MULTICAST_TTL, MAX_BUF_SIZE, MESSAGE, ENCODING, INIT_MSG, UDP_UNICAST_MSG, UDP_MULTICAST_MSG, UNICAST_ASCII_ART, MULTICAST_ASCII_ART
 
 
 def signal_handler(sig, frame):
@@ -60,7 +60,7 @@ def handle_sending_udp_unicast(nick: str, udp_unicast_socket: socket.socket, ini
     if init:
         udp_unicast_socket.sendto(bytes(INIT_MSG, ENCODING), (IP, PORT))
     else:
-        udp_unicast_socket.sendto(bytes(f"{nick}:{ASCII_ART}", ENCODING), (IP, PORT))
+        udp_unicast_socket.sendto(bytes(f"{nick}:{UNICAST_ASCII_ART}", ENCODING), (IP, PORT))
 
 
 def handle_receiving_udp_unicast(udp_unicast_socket: socket.socket) -> None:
@@ -73,15 +73,13 @@ def handle_receiving_udp_unicast(udp_unicast_socket: socket.socket) -> None:
 def handle_sending_udp_multicast(nick: str, udp_multicast_socket: socket.socket,
                                  multicast_address: str, multicast_port: int) -> None:
     udp_multicast_socket.sendto(
-        bytes(f"{nick}:{ASCII_ART}", ENCODING), (multicast_address, multicast_port)
+        bytes(f"{nick}:{MULTICAST_ASCII_ART}", ENCODING), (multicast_address, multicast_port)
     )
 
 
-def handle_receiving_udp_multicast(multicast_address: str,
+def handle_receiving_udp_multicast(udp_multicast_socket: socket.socket, multicast_address: str,
                                    multicast_port: int) -> None:
-    udp_multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     udp_multicast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
     udp_multicast_socket.bind((multicast_address, multicast_port))
 
     mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
@@ -90,6 +88,7 @@ def handle_receiving_udp_multicast(multicast_address: str,
 
     while True:
         buf, _ = udp_multicast_socket.recvfrom(MAX_BUF_SIZE)
+        print(_)
         nick, _, payload = buf.decode(ENCODING).partition(":")
         print(f"Message from {nick}: {payload}")
 
@@ -100,9 +99,11 @@ def main() -> int:
     multicast_address, multicast_port = sys.argv[1], int(sys.argv[2])
 
     nick = input("Your nick: ")
+
     udp_unicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
     udp_multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    udp_multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
+    # udp_multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
 
     client_handler = Thread(
         target=handle_client,
@@ -116,7 +117,7 @@ def main() -> int:
     )
     udp_multicast_receiver = Thread(
         target=handle_receiving_udp_multicast,
-        args=(multicast_address, multicast_port),
+        args=(udp_multicast_socket, multicast_address, multicast_port),
         daemon=True
     )
 
