@@ -101,14 +101,14 @@ def receive_udp_message_from_server(udp_unicast_socket: socket.socket) -> None:
 
 
 def send_udp_multicast_message(nick: str, udp_multicast_socket: socket.socket,
-                                 multicast_address: str, multicast_port: int) -> None:
+                               multicast_address: str, multicast_port: int) -> None:
     udp_multicast_socket.sendto(
         bytes(f"{nick}:{ASCII_ART}", ENCODING), (multicast_address, multicast_port)
     )
 
 
 def receive_udp_multicast_message(nick: str, udp_multicast_socket: socket.socket,
-                                   multicast_address: str, multicast_port: int) -> None:
+                                  multicast_address: str, multicast_port: int) -> None:
     udp_multicast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     udp_multicast_socket.bind((multicast_address, multicast_port))
 

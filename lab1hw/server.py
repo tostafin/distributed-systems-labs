@@ -7,7 +7,7 @@ from threading import Thread, Lock
 from concurrent.futures import ThreadPoolExecutor
 from typing import Set, Tuple
 
-from constants import MAX_NUM_OF_CLIENTS, IP, PORT, MAX_BUF_SIZE, MESSAGE, ENCODING, INIT_MSG
+from constants import IP, PORT, MAX_BUF_SIZE, MESSAGE, ENCODING, INIT_MSG
 
 
 def signal_handler(sig, frame):
@@ -38,14 +38,14 @@ def handle_single_tcp_client(client: socket.socket) -> None:
         tcp_clients.remove(client)
 
 
-def receive_tcp_messages() -> None:
-    with ThreadPoolExecutor(max_workers=MAX_NUM_OF_CLIENTS) as executor:
+def receive_tcp_messages(max_num_of_clients: int) -> None:
+    with ThreadPoolExecutor(max_workers=max_num_of_clients) as executor:
         # create an INET, STREAMing socket
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             # bind the socket to the localhost and a port
             server_socket.bind((IP, PORT))
             # become a server socket
-            server_socket.listen(MAX_NUM_OF_CLIENTS)
+            server_socket.listen(max_num_of_clients)
             while True:
                 # accept connections from outside
                 client_socket, _ = server_socket.accept()
@@ -96,18 +96,20 @@ def receive_udp_multicast_messages(multicast_address: str, multicast_port: int) 
 def main() -> int:
     signal.signal(signal.SIGINT, signal_handler)
 
-    if len(sys.argv) != 3:
-        print(f"Usage: python3 {sys.argv[0]} <multicast_address> <multicast_port>")
+    if len(sys.argv) != 4:
+        print(
+            f"Usage: python {sys.argv[0]} <max_num_of_clients> <multicast_address> <multicast_port>"
+        )
         sys.exit(0)
+    max_num_of_clients = int(sys.argv[1])
+    multicast_address, multicast_port = sys.argv[2], int(sys.argv[3])
 
-    multicast_address, multicast_port = sys.argv[1], int(sys.argv[2])
-
-    tcp_client_handler = Thread(target=receive_tcp_messages, daemon=True)
+    tcp_client_handler = Thread(
+        target=receive_tcp_messages, args=(max_num_of_clients,), daemon=True
+    )
     udp_client_handler = Thread(target=receive_udp_messages, daemon=True)
     udp_multicast_handler = Thread(
-        target=receive_udp_multicast_messages,
-        args=(multicast_address, multicast_port),
-        daemon=True
+        target=receive_udp_multicast_messages, args=(multicast_address, multicast_port), daemon=True
     )
 
     tcp_client_handler.start()
