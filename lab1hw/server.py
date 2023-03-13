@@ -1,6 +1,7 @@
 import socket
 import signal
 import sys
+import struct
 
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
@@ -44,7 +45,6 @@ def handle_tcp_client() -> None:
             while True:
                 # accept connections from outside
                 client_socket, _ = server_socket.accept()
-                print(_)
                 # now do something with the client_socket
                 executor.submit(handle_single_tcp_client, client_socket)
 
@@ -72,17 +72,43 @@ def handle_udp_client() -> None:
                             client_socket.sendto(bytes(f"{nick}:{payload}", ENCODING), (c[0], c[1]))
 
 
+def handle_udp_multicast(multicast_address: str, multicast_port: int) -> None:
+    udp_multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    udp_multicast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    # on this port, listen ONLY to MCAST_GRP
+    udp_multicast_socket.bind((multicast_address, multicast_port))
+
+    mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
+
+    udp_multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+    while True:
+        buf, _ = udp_multicast_socket.recvfrom(MAX_BUF_SIZE)
+        nick, _, payload = buf.decode(ENCODING).partition(":")
+        print(f"Message from {nick}: {payload}")
+
+
 def main() -> int:
     signal.signal(signal.SIGINT, signal_handler)
 
+    multicast_address, multicast_port = sys.argv[1], int(sys.argv[2])
+
     tcp_client_handler = Thread(target=handle_tcp_client, daemon=True)
     udp_client_handler = Thread(target=handle_udp_client, daemon=True)
+    udp_multicast_handler = Thread(
+        target=handle_udp_multicast,
+        args=(multicast_address, multicast_port),
+        daemon=True
+    )
 
     tcp_client_handler.start()
     udp_client_handler.start()
+    udp_multicast_handler.start()
 
     tcp_client_handler.join()
     udp_client_handler.join()
+    udp_multicast_handler.join()
 
     return 0
 
