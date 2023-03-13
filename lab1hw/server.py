@@ -93,11 +93,11 @@ def handle_udp_multicast(multicast_address: str, multicast_port: int) -> None:
 
 
 def main() -> int:
+    signal.signal(signal.SIGINT, signal_handler)
+
     if len(sys.argv) != 3:
         print(f"Usage: python3 {sys.argv[0]} <multicast_address> <multicast_port>")
         sys.exit(0)
-
-    signal.signal(signal.SIGINT, signal_handler)
 
     multicast_address, multicast_port = sys.argv[1], int(sys.argv[2])
 

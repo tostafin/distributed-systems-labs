@@ -16,51 +16,67 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-def handle_client(nick: str, udp_unicast_socket: socket.socket, udp_multicast_socket: socket.socket,
-                  multicast_address: str, multicast_port: int) -> None:
-    # create an INET, STREAMing socket
+def handle_client(nick: str, multicast_address: str, multicast_port: int) -> None:
+    # create sockets
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-        # now connect to the localhost
         client_socket.connect((IP, PORT))
-
-        # send INIT messages
-        client_socket.sendall(bytes(INIT_MSG, ENCODING))
-        send_udp_message_to_server(nick, udp_unicast_socket, True)
-        print(
-f"""You're connected to the server. You can now send and receive messages.
-Type U to send a UDP datagram with an ASCII Art.
-Type M to send a UDP multicast datagram to {multicast_address}:{multicast_port} with an ASCII Art.
-"""
-        )
-
-        # setup TCP receiver
-        tcp_message_receiver = Thread(
-            target=receive_tcp_message_from_server,
-            args=(client_socket,),
-            daemon=True
-        )
-        tcp_message_receiver.start()
-
-        # message input
-        max_msg_len = MAX_BUF_SIZE - len(nick) - 1
-        while True:
-            message = input()
-            if len(message) > max_msg_len:
-                print(f"Message too long, maximum {max_msg_len} characters.")
-            elif message == INIT_MSG:
-                print("This message is reserved for initializing.")
-            elif message == UDP_UNICAST_MSG:
-                send_udp_message_to_server(nick, udp_unicast_socket, False)
-            elif message == UDP_MULTICAST_MSG:
-                send_udp_multicast_message(
-                    nick, udp_multicast_socket, multicast_address, multicast_port
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_unicast_socket:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as\
+                    udp_multicast_socket:
+                # send INIT messages
+                send_tcp_message(client_socket, nick, INIT_MSG, True)
+                send_udp_message_to_server(nick, udp_unicast_socket, True)
+                print(
+                    """You're connected to the server. You can now send and receive messages.
+                    - Type U to send a UDP datagram with an ASCII Art.
+                    - Type M to send a UDP multicast datagram with an ASCII Art.
+                    """
                 )
-            else:
-                send_tcp_message(client_socket, nick, message)
+
+                # setup receivers
+                tcp_message_receiver = Thread(
+                    target=receive_tcp_message_from_server,
+                    args=(client_socket,),
+                    daemon=True
+                )
+                udp_server_receiver = Thread(
+                    target=receive_udp_message_from_server,
+                    args=(udp_unicast_socket,),
+                    daemon=True
+                )
+                udp_multicast_receiver = Thread(
+                    target=receive_udp_multicast_message,
+                    args=(nick, udp_multicast_socket, multicast_address, multicast_port),
+                    daemon=True
+                )
+
+                tcp_message_receiver.start()
+                udp_server_receiver.start()
+                udp_multicast_receiver.start()
+
+                # message input and sending
+                max_msg_len = MAX_BUF_SIZE - len(nick) - 1
+                while True:
+                    message = input()
+                    if len(message) > max_msg_len:
+                        print(f"Message too long, maximum {max_msg_len} characters.")
+                    elif message == INIT_MSG:
+                        print("This message is reserved for initializing.")
+                    elif message == UDP_UNICAST_MSG:
+                        send_udp_message_to_server(nick, udp_unicast_socket, False)
+                    elif message == UDP_MULTICAST_MSG:
+                        send_udp_multicast_message(
+                            nick, udp_multicast_socket, multicast_address, multicast_port
+                        )
+                    else:
+                        send_tcp_message(client_socket, nick, message, False)
 
 
-def send_tcp_message(client_socket: socket.socket, nick: str, message: str) -> None:
-    client_socket.sendall(bytes(MESSAGE.format(nick=nick, message=message), ENCODING))
+def send_tcp_message(client_socket: socket.socket, nick: str, message: str, init: bool) -> None:
+    if init:
+        client_socket.sendall(bytes(INIT_MSG, ENCODING))
+    else:
+        client_socket.sendall(bytes(MESSAGE.format(nick=nick, message=message), ENCODING))
 
 
 def receive_tcp_message_from_server(client: socket.socket) -> None:
@@ -108,42 +124,17 @@ def receive_udp_multicast_message(nick: str, udp_multicast_socket: socket.socket
 
 
 def main() -> int:
+    signal.signal(signal.SIGINT, signal_handler)
+
     if len(sys.argv) != 3:
         print(f"Usage: python3 {sys.argv[0]} <multicast_address> <multicast_port>")
         sys.exit(0)
-
-    signal.signal(signal.SIGINT, signal_handler)
 
     multicast_address, multicast_port = sys.argv[1], int(sys.argv[2])
 
     nick = input("Your nick: ")
 
-    udp_unicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udp_multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-
-    client_handler = Thread(
-        target=handle_client,
-        args=(nick, udp_unicast_socket, udp_multicast_socket, multicast_address, multicast_port),
-        daemon=True
-    )
-    udp_server_receiver = Thread(
-        target=receive_udp_message_from_server,
-        args=(udp_unicast_socket,),
-        daemon=True
-    )
-    udp_multicast_receiver = Thread(
-        target=receive_udp_multicast_message,
-        args=(nick, udp_multicast_socket, multicast_address, multicast_port),
-        daemon=True
-    )
-
-    client_handler.start()
-    udp_server_receiver.start()
-    udp_multicast_receiver.start()
-
-    client_handler.join()
-    udp_server_receiver.join()
-    udp_multicast_receiver.join()
+    handle_client(nick, multicast_address, multicast_port)
 
     return 0
 
