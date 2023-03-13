@@ -37,7 +37,7 @@ def handle_single_tcp_client(client: socket.socket) -> None:
         tcp_clients.remove(client)
 
 
-def handle_tcp_client() -> None:
+def receive_tcp_messages() -> None:
     with ThreadPoolExecutor(max_workers=MAX_NUM_OF_CLIENTS) as executor:
         # create an INET, STREAMing socket
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
@@ -52,7 +52,7 @@ def handle_tcp_client() -> None:
                 executor.submit(handle_single_tcp_client, client_socket)
 
 
-def handle_udp_client() -> None:
+def receive_udp_messages() -> None:
     udp_clients: Set[Tuple[str, int]] = set()
     # create an INET, datagram socket
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
@@ -60,7 +60,6 @@ def handle_udp_client() -> None:
         server_socket.bind((IP, PORT))
         while True:
             buf, address = server_socket.recvfrom(MAX_BUF_SIZE)
-
             if (message := buf.decode(ENCODING)) == INIT_MSG:
                 udp_clients.add(address)
                 print("New UDP client connected.")
@@ -76,20 +75,21 @@ def handle_udp_client() -> None:
                             client_socket.sendto(bytes(f"{nick}:{payload}", ENCODING), (c[0], c[1]))
 
 
-def handle_udp_multicast(multicast_address: str, multicast_port: int) -> None:
-    udp_multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    udp_multicast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+def receive_udp_multicast_messages(multicast_address: str, multicast_port: int) -> None:
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as\
+            udp_multicast_socket:
+        udp_multicast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    udp_multicast_socket.bind((multicast_address, multicast_port))
+        udp_multicast_socket.bind((multicast_address, multicast_port))
 
-    mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
+        mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
 
-    udp_multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        udp_multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
-    while True:
-        buf, _ = udp_multicast_socket.recvfrom(MAX_BUF_SIZE)
-        nick, _, payload = buf.decode(ENCODING).partition(":")
-        print(f"Multicast message from {nick}: {payload}")
+        while True:
+            buf, _ = udp_multicast_socket.recvfrom(MAX_BUF_SIZE)
+            nick, _, payload = buf.decode(ENCODING).partition(":")
+            print(f"Multicast message from {nick}: {payload}")
 
 
 def main() -> int:
@@ -101,10 +101,10 @@ def main() -> int:
 
     multicast_address, multicast_port = sys.argv[1], int(sys.argv[2])
 
-    tcp_client_handler = Thread(target=handle_tcp_client, daemon=True)
-    udp_client_handler = Thread(target=handle_udp_client, daemon=True)
+    tcp_client_handler = Thread(target=receive_tcp_messages, daemon=True)
+    udp_client_handler = Thread(target=receive_udp_messages, daemon=True)
     udp_multicast_handler = Thread(
-        target=handle_udp_multicast,
+        target=receive_udp_multicast_messages,
         args=(multicast_address, multicast_port),
         daemon=True
     )
@@ -112,6 +112,8 @@ def main() -> int:
     tcp_client_handler.start()
     udp_client_handler.start()
     udp_multicast_handler.start()
+
+    print("Server ready.")
 
     tcp_client_handler.join()
     udp_client_handler.join()

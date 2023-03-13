@@ -16,7 +16,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-def handle_client(nick: str, multicast_address: str, multicast_port: int) -> None:
+def set_up_client(nick: str, multicast_address: str, multicast_port: int) -> None:
     # create sockets
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         client_socket.connect((IP, PORT))
@@ -134,7 +134,7 @@ def main() -> int:
 
     nick = input("Your nick: ")
 
-    handle_client(nick, multicast_address, multicast_port)
+    set_up_client(nick, multicast_address, multicast_port)
 
     return 0
 
