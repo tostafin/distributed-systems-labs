@@ -29,9 +29,10 @@ def handle_single_tcp_client(client: socket.socket) -> None:
             print(f"TCP message from {nick}: {payload}")
 
             print("Sending to other clients...")
-            for c in tcp_clients:
-                if c != client:
-                    c.sendall(bytes(MESSAGE.format(nick=nick, message=payload), ENCODING))
+            with tcp_clients_lock:
+                for c in tcp_clients:
+                    if c != client:
+                        c.sendall(bytes(MESSAGE.format(nick=nick, message=payload), ENCODING))
 
     with tcp_clients_lock:
         tcp_clients.remove(client)

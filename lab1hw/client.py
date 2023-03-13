@@ -7,7 +7,7 @@ from threading import Thread
 
 from constants import (
     IP, PORT, MAX_BUF_SIZE, MESSAGE, ENCODING, INIT_MSG, UDP_UNICAST_MSG, UDP_MULTICAST_MSG,
-    UNICAST_ASCII_ART, MULTICAST_ASCII_ART
+    ASCII_ART
 )
 
 
@@ -90,7 +90,7 @@ def send_udp_message_to_server(nick: str, udp_unicast_socket: socket.socket, ini
     if init:
         udp_unicast_socket.sendto(bytes(INIT_MSG, ENCODING), (IP, PORT))
     else:
-        udp_unicast_socket.sendto(bytes(f"{nick}:{UNICAST_ASCII_ART}", ENCODING), (IP, PORT))
+        udp_unicast_socket.sendto(bytes(f"{nick}:{ASCII_ART}", ENCODING), (IP, PORT))
 
 
 def receive_udp_message_from_server(udp_unicast_socket: socket.socket) -> None:
@@ -103,7 +103,7 @@ def receive_udp_message_from_server(udp_unicast_socket: socket.socket) -> None:
 def send_udp_multicast_message(nick: str, udp_multicast_socket: socket.socket,
                                  multicast_address: str, multicast_port: int) -> None:
     udp_multicast_socket.sendto(
-        bytes(f"{nick}:{MULTICAST_ASCII_ART}", ENCODING), (multicast_address, multicast_port)
+        bytes(f"{nick}:{ASCII_ART}", ENCODING), (multicast_address, multicast_port)
     )
 
 
