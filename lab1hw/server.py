@@ -76,7 +76,6 @@ def handle_udp_multicast(multicast_address: str, multicast_port: int) -> None:
     udp_multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     udp_multicast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    # on this port, listen ONLY to MCAST_GRP
     udp_multicast_socket.bind((multicast_address, multicast_port))
 
     mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)

@@ -1,6 +1,7 @@
 import socket
 import signal
 import sys
+import struct
 
 from threading import Thread
 
@@ -76,9 +77,21 @@ def handle_sending_udp_multicast(nick: str, udp_multicast_socket: socket.socket,
     )
 
 
-def handle_receiving_udp_multicast(udp_multicast_socket: socket.socket, multicast_address: str,
+def handle_receiving_udp_multicast(multicast_address: str,
                                    multicast_port: int) -> None:
-    pass
+    udp_multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    udp_multicast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    udp_multicast_socket.bind((multicast_address, multicast_port))
+
+    mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
+
+    udp_multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+    while True:
+        buf, _ = udp_multicast_socket.recvfrom(MAX_BUF_SIZE)
+        nick, _, payload = buf.decode(ENCODING).partition(":")
+        print(f"Message from {nick}: {payload}")
 
 
 def main() -> int:
@@ -103,7 +116,7 @@ def main() -> int:
     )
     udp_multicast_receiver = Thread(
         target=handle_receiving_udp_multicast,
-        args=(udp_multicast_socket, multicast_address, multicast_port),
+        args=(multicast_address, multicast_port),
         daemon=True
     )
 
