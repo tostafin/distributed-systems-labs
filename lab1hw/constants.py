@@ -4,7 +4,6 @@ MAX_NUM_OF_CLIENTS: Final[int] = 2
 
 IP: Final[str] = "localhost"
 PORT: Final[int] = 8000
-MULTICAST_TTL: Final[int] = 2
 
 MAX_BUF_SIZE: Final[int] = 1024
 

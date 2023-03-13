@@ -3,7 +3,7 @@ import signal
 import sys
 import struct
 
-from threading import Thread
+from threading import Thread, Lock
 from concurrent.futures import ThreadPoolExecutor
 from typing import Set, Tuple
 
@@ -15,23 +15,26 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-tcp_clients: Set[socket.socket] = set()  # TODO: add locks
+tcp_clients: Set[socket.socket] = set()
+tcp_clients_lock = Lock()
 def handle_single_tcp_client(client: socket.socket) -> None:
     buf: bytes
     while buf := client.recv(MAX_BUF_SIZE):
         if (message := buf.decode(ENCODING)) == INIT_MSG:
             print("New TCP client has connected.")
-            print(client)
-            tcp_clients.add(client)
+            with tcp_clients_lock:
+                tcp_clients.add(client)
         else:
             nick, _, payload = message.partition(":")
-            print(f"Message from {nick}: {payload}")
+            print(f"TCP message from {nick}: {payload}")
 
+            print("Sending to other clients...")
             for c in tcp_clients:
                 if c != client:
                     c.sendall(bytes(MESSAGE.format(nick=nick, message=payload), ENCODING))
 
-    tcp_clients.remove(client)
+    with tcp_clients_lock:
+        tcp_clients.remove(client)
 
 
 def handle_tcp_client() -> None:
@@ -64,8 +67,9 @@ def handle_udp_client() -> None:
 
             else:
                 nick, _, payload = message.partition(":")
-                print(f"Message from {nick}: {payload}")
+                print(f"UDP message from {nick}: {payload}")
 
+                print("Sending to other clients...")
                 for c in udp_clients:
                     if c != address:
                         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_socket:
@@ -85,10 +89,14 @@ def handle_udp_multicast(multicast_address: str, multicast_port: int) -> None:
     while True:
         buf, _ = udp_multicast_socket.recvfrom(MAX_BUF_SIZE)
         nick, _, payload = buf.decode(ENCODING).partition(":")
-        print(f"Message from {nick}: {payload}")
+        print(f"Multicast message from {nick}: {payload}")
 
 
 def main() -> int:
+    if len(sys.argv) != 3:
+        print(f"Usage: python3 {sys.argv[0]} <multicast_address> <multicast_port>")
+        sys.exit(0)
+
     signal.signal(signal.SIGINT, signal_handler)
 
     multicast_address, multicast_port = sys.argv[1], int(sys.argv[2])
