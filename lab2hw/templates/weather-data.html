@@ -8,11 +8,52 @@
     <title>Weather Data</title>
 </head>
 <body>
+    <h1>Historical data:</h1>
     <div>
-        Average air temperature at 2 meters above ground: {{ temperature_2m }}
+        <p>
+            Average air temperature at 2 meters above ground: {{ historical_avg_temp }} {{ temp_unit }}
+        </p>
+        <p>
+            Maximum: {{ historical_max_temp }} {{ temp_unit }} at {{ historical_max_temp_date }}
+        </p>
+        <p>
+            Minimum: {{ historical_min_temp }} {{ temp_unit }} at {{ historical_min_temp_date }}
+        </p>
     </div>
     <div>
-        Average relative humidity at 2 meters above ground: {{ relativehumidity_2m }}
+        <p>
+            Average relative humidity at 2 meters above ground: {{ historical_avg_humidity }} {{ humidity_unit }}
+        </p>
+        <p>
+            Maximum: {{ historical_max_humidity }} {{ humidity_unit }} at {{ historical_max_humidity_date }}
+        </p>
+        <p>
+            Minimum: {{ historical_min_humidity }} {{ humidity_unit }} at {{ historical_min_humidity_date }}
+        </p>
+    </div>
+
+    <h1>Forecast:</h1>
+    <div>
+        <p>
+            Average air temperature at 2 meters above ground: {{ forecast_avg_temp }} {{ temp_unit }}
+        </p>
+        <p>
+            Maximum: {{ forecast_max_temp }} {{ temp_unit }} at {{ forecast_max_temp_date }}
+        </p>
+        <p>
+            Minimum: {{ forecast_min_temp }} {{ temp_unit }} at {{ forecast_min_temp_date }}
+        </p>
+    </div>
+    <div>
+        <p>
+            Average relative humidity at 2 meters above ground: {{ forecast_avg_humidity }} {{ humidity_unit }}
+        </p>
+        <p>
+            Maximum: {{ forecast_max_humidity }} {{ humidity_unit }} at {{ forecast_max_humidity_date }}
+        </p>
+        <p>
+            Minimum: {{ forecast_min_humidity }} {{ humidity_unit }} at {{ forecast_min_humidity_date }}
+        </p>
     </div>
 </body>
 </html>
