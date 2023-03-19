@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>API Form</title>
+</head>
+<body style="background-color: #393535">
+<h1>Weather data</h1>
+<form action="/weather-data" method="post" class="form-example" style="color: white">
+    <div>
+        <label for="name">Enter location: </label>
+        <input type="text" name="location" id="name" value="Warszawa" required>
+    </div>
+    <div>
+        <label for="start">Start date:</label>
+        <input type="date" id="start" name="startdate"
+               value="2018-01-01"
+               min="2018-01-01" max="2022-12-31">
+    </div>
+    <div>
+        <label for="end">End date:</label>
+        <input type="date" id="end" name="enddate"
+               value="2022-12-31"
+               min="2018-01-01" max="2022-12-31">
+    </div>
+    <div>
+        <fieldset>
+            <legend>Choose weather data to fetch:</legend>
+            <div>
+              <input type="checkbox" id="scales" name="scales">
+              <label for="scales">Scales</label>
+            </div>
+            <div>
+              <input type="checkbox" id="horns" name="horns">
+              <label for="horns">Horns</label>
+            </div>
+        </fieldset>
+    </div>
+    <div>
+        <input type="submit" value="Get weather data">
+    </div>
+</form>
+</body>
+</html>
