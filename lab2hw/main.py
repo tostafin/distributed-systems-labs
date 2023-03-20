@@ -1,7 +1,7 @@
 import secrets
 from statistics import fmean
 from typing import Annotated
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import requests
 
@@ -10,8 +10,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from constants import (GEOCODE_API_URL, WEATHER_HISTORICAL_DATA_API_URL, WEATHER_FORECAST_API_URL, WEATHER_INTERVAL,
-                       WEATHER_DATES, WEATHER_UNITS, WEATHER_FEATURES, Weather)
+from constants import (GEOCODE_API_URL, WEATHER_HISTORICAL_DATA_API_URL, WEATHER_FORECAST_API_URL,
+                       DATE_FORMAT, MIN_DATE, MAX_DATE, MIN_FORECAST_DAYS, MAX_FORECAST_DAYS,
+                       WEATHER_INTERVAL, WEATHER_DATES, WEATHER_UNITS, WEATHER_FEATURES, Weather)
 
 app = FastAPI()
 
@@ -34,32 +35,30 @@ def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(security)]
     if not (is_correct_username and is_correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect login or password",
+            detail="Incorrect login or password.",
             headers={"WWW-Authenticate": "Basic"},
         )
 
 
 @app.get("/", response_class=HTMLResponse)
-async def read_form(credentials: Annotated[HTTPBasicCredentials, Depends(authenticate)],
-                    request: Request, mindate: Annotated[str, Form()] = "1985-01-01",
-                    maxdate: Annotated[str, Form()] = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')):
-    try:
-        return templates.TemplateResponse(
-            "form.html", {
-                "request": request,
-                "mindate": mindate,
-                "maxdate": maxdate
-            }
-        )
-    except HTTPException as exception:
-        return templates.TemplateResponse("error.html", {"request": request, "error": exception.detail})
+async def read_form(request: Request, credentials: Annotated[HTTPBasicCredentials, Depends(authenticate)]):
+    return templates.TemplateResponse(
+        "form.html", {
+            "request": request,
+            "mindate": MIN_DATE,
+            "maxdate": MAX_DATE,
+            "minforecastdays": MIN_FORECAST_DAYS,
+            "maxforecastdays": MAX_FORECAST_DAYS
+        }
+    )
 
 
 @app.post("/weather-data", response_class=HTMLResponse)
 async def submit_form(request: Request, location: Annotated[str, Form()], startdate: Annotated[str, Form()],
                       enddate: Annotated[str, Form()], forecastdays: Annotated[str, Form()]):
     try:
-        weather_data = get_data(location, startdate, enddate, forecastdays)
+        validate_data(startdate, enddate, forecastdays)
+        weather_data = get_complete_weather_data(location, startdate, enddate, forecastdays)
         return templates.TemplateResponse(
             "weather-data.html",
             {
@@ -94,7 +93,35 @@ async def submit_form(request: Request, location: Annotated[str, Form()], startd
             }
         )
     except HTTPException as exception:
-        return templates.TemplateResponse("error.html", {"request": request, "error": exception.detail})
+        return templates.TemplateResponse(
+            "error.html", {"request": request, "error": exception.detail}, status_code=exception.status_code
+        )
+
+
+def validate_data(startdate, enddate, forecastdays):
+    try:
+        datetime.strptime(startdate, DATE_FORMAT)
+        datetime.strptime(enddate, DATE_FORMAT)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Dates must be passed in format: {DATE_FORMAT}"
+        )
+    try:
+        forecastdays = int(forecastdays)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Forecast days must be an integer")
+    if startdate < MIN_DATE or enddate < MIN_DATE:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Dates must be at least {MIN_DATE}")
+    if startdate > MAX_DATE or enddate > MAX_DATE:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Dates cannot be greater than {MAX_DATE}")
+    if enddate <= startdate:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"End date must be greater than start date")
+    if not MIN_FORECAST_DAYS <= forecastdays <= MAX_FORECAST_DAYS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Forecast days must be a number between {MIN_FORECAST_DAYS} and {MAX_FORECAST_DAYS}"
+        )
 
 
 def get_location(request_url):
@@ -106,7 +133,7 @@ def get_location(request_url):
         raise HTTPException(status_code=location_data["status"], detail=location_data["message"])
 
     if not location_data:
-        raise HTTPException(status_code=404, detail="Location not found.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Location not found")
 
     return location_data[0]["lat"], location_data[0]["lon"]
 
@@ -117,12 +144,12 @@ def get_weather_data(request_url):
     try:
         weather_request.raise_for_status()
     except requests.HTTPError:
-        HTTPException(status_code=400, detail=weather_data["reason"])
+        HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=weather_data["reason"])
 
     return weather_data
 
 
-def get_data(location, startdate, enddate, forecastdays):
+def get_complete_weather_data(location, startdate, enddate, forecastdays):
     latitude, longitude = get_location(GEOCODE_API_URL.format(location=location))
     weather_historical_data = get_weather_data(WEATHER_HISTORICAL_DATA_API_URL.format(
         latitude=latitude, longitude=longitude, startdate=startdate, enddate=enddate, weatherinterval=WEATHER_INTERVAL)

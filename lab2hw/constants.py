@@ -1,5 +1,6 @@
 from typing import Final, List
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 
 GEOCODE_API_URL: Final[str] = "https://nominatim.openstreetmap.org/search?q={location}&format=jsonv2&limit=1"
@@ -9,6 +10,13 @@ WEATHER_HISTORICAL_DATA_API_URL: Final[str] = "https://archive-api.open-meteo.co
 WEATHER_FORECAST_API_URL: Final[str] = "https://api.open-meteo.com/v1/forecast?" \
                                        "latitude={latitude}&longitude={longitude}&forecast_days={forecastdays}" \
                                        "&{weatherinterval}="
+
+DATE_FORMAT: Final[str] = "%Y-%m-%d"
+MIN_DATE: Final[str] = "1985-01-01"
+MAX_DATE: Final[str] = (datetime.now() - timedelta(days=7)).strftime(DATE_FORMAT)
+MIN_FORECAST_DAYS: Final[int] = 1
+MAX_FORECAST_DAYS: Final[int] = 16
+
 
 WEATHER_INTERVAL: Final[str] = "hourly"
 WEATHER_DATES: Final[str] = "time"
