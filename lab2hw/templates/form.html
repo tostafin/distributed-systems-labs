@@ -19,13 +19,13 @@
         <label for="start">Start date:</label>
         <input type="date" id="start" name="startdate"
                value="2018-01-01"
-               min="2018-01-01" max="2022-12-31">
+               min="{{ mindate }}" max="{{ maxdate }}">
     </div>
     <div>
         <label for="end">End date:</label>
         <input type="date" id="end" name="enddate"
                value="2022-12-31"
-               min="2018-01-01" max="2022-12-31">
+               min="{{ mindate }}" max="{{ maxdate }}">
     </div>
     <div>
         <label for="forecastdays">Enter forecast days: </label>

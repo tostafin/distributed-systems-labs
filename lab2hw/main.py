@@ -1,6 +1,7 @@
 from statistics import fmean
 from typing import Annotated
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 import requests
 
@@ -47,8 +48,15 @@ class Weather:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def read_form(request: Request):
-    return templates.TemplateResponse("form.html", {"request": request})
+async def read_form(request: Request, mindate: Annotated[str, Form()] = "1985-01-01",
+                    maxdate: Annotated[str, Form()] = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')):
+    return templates.TemplateResponse(
+        "form.html", {
+            "request": request,
+            "mindate": mindate,
+            "maxdate": maxdate
+        }
+    )
 
 
 @app.post("/weather-data", response_class=HTMLResponse)
