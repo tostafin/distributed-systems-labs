@@ -8,30 +8,30 @@
     <title>API Form</title>
 </head>
 <body style="background-color: #393535">
-<h1>Weather data (historical data and forecast)</h1>
-<form action="/weather-data" method="post" class="form-example" style="color: white">
-    <div>
-        <label for="name">Enter location: </label>
-        <input type="text" name="location" id="name" value="Warszawa" required>
-    </div>
-    <div>Historical data:</div>
-    <div>
-        <label for="start">Start date:</label>
-        <input type="date" id="start" name="startdate"
-               value="2018-01-01"
-               min="{{ mindate }}" max="{{ maxdate }}">
-    </div>
-    <div>
-        <label for="end">End date:</label>
-        <input type="date" id="end" name="enddate"
-               value="2022-12-31"
-               min="{{ mindate }}" max="{{ maxdate }}">
-    </div>
-    <div>
-        <label for="forecastdays">Enter forecast days: </label>
-        <input type="number" name="forecastdays" id="forecastdays" value="1" min="1" max="16" required>
-    </div>
-    <input type="submit" value="Get weather data">
-</form>
+    <h1>Weather data (historical data and forecast)</h1>
+    <form action="/weather-data" method="post" class="form-example" style="color: white">
+        <div>
+            <label for="name">Enter location: </label>
+            <input type="text" name="location" id="name" value="Warszawa" required>
+        </div>
+        <div>Historical data:</div>
+        <div>
+            <label for="start">Start date:</label>
+            <input type="date" id="start" name="startdate"
+                   value="2018-01-01"
+                   min="{{ mindate }}" max="{{ maxdate }}">
+        </div>
+        <div>
+            <label for="end">End date:</label>
+            <input type="date" id="end" name="enddate"
+                   value="2022-12-31"
+                   min="{{ mindate }}" max="{{ maxdate }}">
+        </div>
+        <div>
+            <label for="forecastdays">Enter forecast days: </label>
+            <input type="number" name="forecastdays" id="forecastdays" value="1" min="1" max="16" required>
+        </div>
+        <input type="submit" value="Get weather data">
+    </form>
 </body>
 </html>

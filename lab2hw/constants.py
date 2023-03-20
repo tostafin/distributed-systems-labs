@@ -18,6 +18,7 @@ WEATHER_FEATURES: Final[List[str]] = [
     "relativehumidity_2m"
 ]
 
+
 @dataclass
 class Weather:
     historical_avg_temp: float
