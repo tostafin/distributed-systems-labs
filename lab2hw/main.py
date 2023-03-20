@@ -1,62 +1,58 @@
+import secrets
 from statistics import fmean
 from typing import Annotated
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 import requests
 
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import FastAPI, Request, Form, HTTPException, Depends, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from constants import (GEOCODE_API_URL, WEATHER_HISTORICAL_DATA_API_URL, WEATHER_FORECAST_API_URL, WEATHER_INTERVAL,
-                       WEATHER_DATES, WEATHER_UNITS, WEATHER_FEATURES)
+                       WEATHER_DATES, WEATHER_UNITS, WEATHER_FEATURES, Weather)
 
 app = FastAPI()
+
+security = HTTPBasic()
 
 templates = Jinja2Templates(directory="templates")
 
 
-@dataclass
-class Weather:
-    historical_avg_temp: float
-    historical_max_temp: float
-    historical_max_temp_date: str
-    historical_min_temp: float
-    historical_min_temp_date: str
-
-    historical_avg_humidity: float
-    historical_max_humidity: float
-    historical_max_humidity_date: str
-    historical_min_humidity: float
-    historical_min_humidity_date: str
-
-    forecast_avg_temp: float
-    forecast_max_temp: float
-    forecast_max_temp_date: str
-    forecast_min_temp: float
-    forecast_min_temp_date: str
-
-    forecast_avg_humidity: float
-    forecast_max_humidity: float
-    forecast_max_humidity_date: str
-    forecast_min_humidity: float
-    forecast_min_humidity_date: str
-
-    temp_unit: str
-    humidity_unit: str
+def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
+    current_username_bytes = credentials.username.encode("utf8")
+    correct_username_bytes = b"test"
+    is_correct_username = secrets.compare_digest(
+        current_username_bytes, correct_username_bytes
+    )
+    current_password_bytes = credentials.password.encode("utf8")
+    correct_password_bytes = b"test"
+    is_correct_password = secrets.compare_digest(
+        current_password_bytes, correct_password_bytes
+    )
+    if not (is_correct_username and is_correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect login or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
 
 @app.get("/", response_class=HTMLResponse)
-async def read_form(request: Request, mindate: Annotated[str, Form()] = "1985-01-01",
+async def read_form(credentials: Annotated[HTTPBasicCredentials, Depends(authenticate)],
+                    request: Request, mindate: Annotated[str, Form()] = "1985-01-01",
                     maxdate: Annotated[str, Form()] = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')):
-    return templates.TemplateResponse(
-        "form.html", {
-            "request": request,
-            "mindate": mindate,
-            "maxdate": maxdate
-        }
-    )
+    try:
+        return templates.TemplateResponse(
+            "form.html", {
+                "request": request,
+                "mindate": mindate,
+                "maxdate": maxdate
+            }
+        )
+    except HTTPException as exception:
+        return templates.TemplateResponse("error.html", {"request": request, "error": exception.detail})
 
 
 @app.post("/weather-data", response_class=HTMLResponse)
