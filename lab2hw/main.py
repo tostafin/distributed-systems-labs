@@ -157,13 +157,13 @@ def get_complete_weather_data(location, startdate, enddate, forecastdays):
     weather_forecast_data = get_weather_data(WEATHER_FORECAST_API_URL.format(
         latitude=latitude, longitude=longitude, forecastdays=forecastdays, weatherinterval=WEATHER_INTERVAL)
     )
-    historical_temperature = weather_historical_data[WEATHER_INTERVAL][WEATHER_FEATURES[0]]
-    historical_humidity = weather_historical_data[WEATHER_INTERVAL][WEATHER_FEATURES[1]]
-    historical_dates = weather_historical_data[WEATHER_INTERVAL][WEATHER_DATES]
+    historical_temperature = list(filter(None, weather_historical_data[WEATHER_INTERVAL][WEATHER_FEATURES[0]]))
+    historical_humidity = list(filter(None, weather_historical_data[WEATHER_INTERVAL][WEATHER_FEATURES[1]]))
+    historical_dates = list(filter(None, weather_historical_data[WEATHER_INTERVAL][WEATHER_DATES]))
 
-    forecast_temperature = weather_forecast_data[WEATHER_INTERVAL][WEATHER_FEATURES[0]]
-    forecast_humidity = weather_forecast_data[WEATHER_INTERVAL][WEATHER_FEATURES[1]]
-    forecast_dates = weather_forecast_data[WEATHER_INTERVAL][WEATHER_DATES]
+    forecast_temperature = list(filter(None, weather_forecast_data[WEATHER_INTERVAL][WEATHER_FEATURES[0]]))
+    forecast_humidity = list(filter(None, weather_forecast_data[WEATHER_INTERVAL][WEATHER_FEATURES[1]]))
+    forecast_dates = list(filter(None, weather_forecast_data[WEATHER_INTERVAL][WEATHER_DATES]))
 
     return Weather(
         historical_avg_temp=round(fmean(historical_temperature), 2),
