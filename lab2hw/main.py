@@ -164,40 +164,45 @@ def get_complete_weather_data(location, startdate, enddate, forecastdays):
     forecast_temperature = list(filter(None, weather_forecast_data[WEATHER_INTERVAL][WEATHER_FEATURES[0]]))
     forecast_humidity = list(filter(None, weather_forecast_data[WEATHER_INTERVAL][WEATHER_FEATURES[1]]))
     forecast_dates = list(filter(None, weather_forecast_data[WEATHER_INTERVAL][WEATHER_DATES]))
+    try:
+        return Weather(
+            historical_avg_temp=round(fmean(historical_temperature), 2),
+            historical_max_temp=round(max(historical_temperature), 2),
+            historical_max_temp_date=historical_dates[
+                max(range(len(historical_temperature)), key=historical_temperature.__getitem__)],
+            historical_min_temp=round(min(historical_temperature), 2),
+            historical_min_temp_date=historical_dates[
+                min(range(len(historical_temperature)), key=historical_temperature.__getitem__)],
 
-    return Weather(
-        historical_avg_temp=round(fmean(historical_temperature), 2),
-        historical_max_temp=round(max(historical_temperature), 2),
-        historical_max_temp_date=historical_dates[
-            max(range(len(historical_temperature)), key=historical_temperature.__getitem__)],
-        historical_min_temp=round(min(historical_temperature), 2),
-        historical_min_temp_date=historical_dates[
-            min(range(len(historical_temperature)), key=historical_temperature.__getitem__)],
+            historical_avg_humidity=round(fmean(historical_humidity), 2),
+            historical_max_humidity=round(max(historical_humidity), 2),
+            historical_max_humidity_date=historical_dates[
+                max(range(len(historical_humidity)), key=historical_humidity.__getitem__)],
+            historical_min_humidity=round(min(historical_humidity), 2),
+            historical_min_humidity_date=historical_dates[
+                min(range(len(historical_humidity)), key=historical_humidity.__getitem__)],
 
-        historical_avg_humidity=round(fmean(historical_humidity), 2),
-        historical_max_humidity=round(max(historical_humidity), 2),
-        historical_max_humidity_date=historical_dates[
-            max(range(len(historical_humidity)), key=historical_humidity.__getitem__)],
-        historical_min_humidity=round(min(historical_humidity), 2),
-        historical_min_humidity_date=historical_dates[
-            min(range(len(historical_humidity)), key=historical_humidity.__getitem__)],
+            forecast_avg_temp=round(fmean(forecast_temperature), 2),
+            forecast_max_temp=round(max(forecast_temperature), 2),
+            forecast_max_temp_date=forecast_dates[
+                max(range(len(forecast_temperature)), key=forecast_temperature.__getitem__)],
+            forecast_min_temp=round(min(forecast_temperature), 2),
+            forecast_min_temp_date=forecast_dates[
+                min(range(len(forecast_temperature)), key=forecast_temperature.__getitem__)],
 
-        forecast_avg_temp=round(fmean(forecast_temperature), 2),
-        forecast_max_temp=round(max(forecast_temperature), 2),
-        forecast_max_temp_date=forecast_dates[
-            max(range(len(forecast_temperature)), key=forecast_temperature.__getitem__)],
-        forecast_min_temp=round(min(forecast_temperature), 2),
-        forecast_min_temp_date=forecast_dates[
-            min(range(len(forecast_temperature)), key=forecast_temperature.__getitem__)],
+            forecast_avg_humidity=round(fmean(forecast_humidity), 2),
+            forecast_max_humidity=round(max(forecast_humidity), 2),
+            forecast_max_humidity_date=forecast_dates[
+                max(range(len(forecast_humidity)), key=forecast_humidity.__getitem__)],
+            forecast_min_humidity=round(min(forecast_humidity), 2),
+            forecast_min_humidity_date=forecast_dates[
+                min(range(len(forecast_humidity)), key=forecast_humidity.__getitem__)],
 
-        forecast_avg_humidity=round(fmean(forecast_humidity), 2),
-        forecast_max_humidity=round(max(forecast_humidity), 2),
-        forecast_max_humidity_date=forecast_dates[
-            max(range(len(forecast_humidity)), key=forecast_humidity.__getitem__)],
-        forecast_min_humidity=round(min(forecast_humidity), 2),
-        forecast_min_humidity_date=forecast_dates[
-            min(range(len(forecast_humidity)), key=forecast_humidity.__getitem__)],
-
-        temp_unit=weather_historical_data[WEATHER_UNITS][WEATHER_FEATURES[0]],
-        humidity_unit=weather_historical_data[WEATHER_UNITS][WEATHER_FEATURES[1]]
-    )
+            temp_unit=weather_historical_data[WEATHER_UNITS][WEATHER_FEATURES[0]],
+            humidity_unit=weather_historical_data[WEATHER_UNITS][WEATHER_FEATURES[1]]
+        )
+    except (ValueError, IndexError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty data set. Try picking a different location or time intervals and forecast days"
+        )
