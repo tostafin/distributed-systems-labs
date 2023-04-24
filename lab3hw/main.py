@@ -14,28 +14,41 @@ import torchvision
 import torchvision.transforms as transforms
 
 
-transform = transforms.Compose([transforms.ToTensor()])
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-train_set = torchvision.datasets.FashionMNIST(
+train_set = torchvision.datasets.CIFAR10(
     root="./data", train=True, download=True, transform=transform
 )
 
-test_set = torchvision.datasets.FashionMNIST(
+test_set = torchvision.datasets.CIFAR10(
     root="./data", train=False, download=True, transform=transform
 )
 
 
+# classes = (
+#     "T-shirt",
+#     "Trouser",
+#     "Pullover",
+#     "Dress",
+#     "Coat",
+#     "Sandal",
+#     "Shirt",
+#     "Sneaker",
+#     "Bag",
+#     "Ankle boot"
+# )
+
 classes = (
-    "top",
-    "Trouser",
-    "Pullover",
-    "Dress",
-    "Coat",
-    "Sandal",
-    "Shirt",
-    "Sneaker",
-    "Bag",
-    "Ankle boot"
+    "plane",
+    "car",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck"
 )
 
 
@@ -43,7 +56,7 @@ class LeNet(nn.Module):
     def __init__(self, input_size: int, num_of_classes: int):
         super().__init__()
         self.backbone = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5, padding=0),
+            nn.Conv2d(in_channels=3, out_channels=6, kernel_size=5, padding=0),
             nn.AvgPool2d(kernel_size=2, stride=2),
             nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5, padding=0),
             nn.AvgPool2d(kernel_size=2, stride=2)
@@ -63,7 +76,7 @@ class LeNet(nn.Module):
 
 def show_image(img):
     img = img / 2 + 0.5
-    np_img = img.numpy()
+    np_img = img.to(torch.device("cpu")).numpy()
     plt.imshow(np.transpose(np_img, (1, 2, 0)))
     plt.axis("off")
     plt.show()
@@ -128,6 +141,18 @@ def validate_epoch(test_loader, net, criterion):
     return test_loss
 
 
+def show_example_results(train_loader, net, batch_size):
+    data_iter = iter(train_loader)
+    images, labels = next(data_iter)
+
+    show_image(torchvision.utils.make_grid(images))
+    print("GroundTruth:\t", " ".join(f"{classes[labels[i]]:15s}" for i in range(batch_size)))
+
+    outputs = net(images)
+    _, predicted = torch.max(outputs, 1)
+    print("Predicted:\t", " ".join(f"{classes[predicted[i]]:15s}" for i in range(batch_size)))
+
+
 def train_func(config):
     batch_size = config["batch_size"]
     lr = config["lr"]
@@ -135,7 +160,6 @@ def train_func(config):
     epochs = config["epochs"]
 
     worker_batch_size = batch_size // session.get_world_size()
-    print(worker_batch_size, batch_size, session.get_world_size())
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=worker_batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=worker_batch_size, shuffle=True)
@@ -143,8 +167,7 @@ def train_func(config):
     train_loader = train.torch.prepare_data_loader(train_loader)
     test_loader = train.torch.prepare_data_loader(test_loader)
 
-    # Create model.
-    net = LeNet(256, len(classes))
+    net = LeNet(400, len(classes))
     net = train.torch.prepare_model(net)
 
     criterion = nn.CrossEntropyLoss()
@@ -154,6 +177,8 @@ def train_func(config):
         train_epoch(train_loader, net, criterion, optimizer, epoch)
         loss = validate_epoch(test_loader, net, criterion)
         session.report(dict(loss=loss))
+
+    show_example_results(train_loader, net, worker_batch_size)
 
 
 def train_fashion_mnist(num_workers=2, use_gpu=False):
