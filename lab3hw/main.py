@@ -118,10 +118,10 @@ def validate_epoch(test_loader, net, criterion):
             outputs = net(images)
 
             _, predictions = torch.max(outputs, 1)
-            for i, classname in enumerate(classes):
-                class_pred = labels[labels == i] == predictions[labels == i]
-                correct_pred[classname] += class_pred.sum()
-                total_pred[classname] += class_pred.size(0)
+            for label, prediction in zip(labels, predictions):
+                if label == prediction:
+                    correct_pred[classes[label]] += 1
+                total_pred[classes[label]] += 1
 
             test_loss += criterion(outputs, labels).item()
             correct += (outputs.argmax(1) == labels).type(torch.float).sum().item()
@@ -145,12 +145,12 @@ def show_example_results(train_loader, net, batch_size):
     data_iter = iter(train_loader)
     images, labels = next(data_iter)
 
-    show_image(torchvision.utils.make_grid(images))
+    # show_image(torchvision.utils.make_grid(images))
     print("GroundTruth:\t", " ".join(f"{classes[labels[i]]:15s}" for i in range(batch_size)))
 
     outputs = net(images)
     _, predicted = torch.max(outputs, 1)
-    print("Predicted:\t", " ".join(f"{classes[predicted[i]]:15s}" for i in range(batch_size)))
+    print("Predicted:\t", " ".join(f"{classes[predicted[i]]:15s}" for i in range(batch_size)), end="\n\n")
 
 
 def train_func(config):
