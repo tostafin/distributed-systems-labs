@@ -17,26 +17,12 @@ import torchvision.transforms as transforms
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 train_set = torchvision.datasets.CIFAR10(
-    root="./data", train=True, download=True, transform=transform
+    root="~/data", train=True, download=True, transform=transform
 )
 
 test_set = torchvision.datasets.CIFAR10(
-    root="./data", train=False, download=True, transform=transform
+    root="~/data", train=False, download=True, transform=transform
 )
-
-
-# classes = (
-#     "T-shirt",
-#     "Trouser",
-#     "Pullover",
-#     "Dress",
-#     "Coat",
-#     "Sandal",
-#     "Shirt",
-#     "Sneaker",
-#     "Bag",
-#     "Ankle boot"
-# )
 
 classes = (
     "plane",
@@ -90,13 +76,11 @@ def train_epoch(train_loader, net, criterion, optimizer, epoch):
 
         optimizer.zero_grad()
 
-        # Compute prediction error
         outputs = net(inputs)
         loss = criterion(outputs, labels)
 
         running_loss += loss.item()
 
-        # Backpropagation
         loss.backward()
         optimizer.step()
         if i % 200 == 199:
@@ -181,7 +165,7 @@ def train_func(config):
     show_example_results(train_loader, net, worker_batch_size)
 
 
-def train_fashion_mnist(num_workers=2, use_gpu=False):
+def train_cifar10(num_workers=2, use_gpu=False):
     trainer = TorchTrainer(
         train_loop_per_worker=train_func,
         train_loop_config={
@@ -198,5 +182,5 @@ def train_fashion_mnist(num_workers=2, use_gpu=False):
 
 if __name__ == "__main__":
     ray.init()
-    train_fashion_mnist()
+    train_cifar10()
     ray.shutdown()

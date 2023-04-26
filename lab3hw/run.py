@@ -9,15 +9,14 @@ job_id = client.submit_job(
     # Path to the local directory that contains the script.py file
     runtime_env={
         "working_dir": "./",
-        "pip": ["torch==1.13.1", "matplotlib", "torchvision"]
+        "pip": ["torch", "torchvision", "matplotlib"]
     }
 )
 print(job_id)
 
 
-def wait_until_status(job_id, status_to_wait_for, timeout_seconds=500):
-    start = time.time()
-    while time.time() - start <= timeout_seconds:
+def wait_until_status(job_id, status_to_wait_for):
+    while True:
         status = client.get_job_status(job_id)
         print(f"status: {status}")
         if status in status_to_wait_for:
