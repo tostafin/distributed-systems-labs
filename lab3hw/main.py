@@ -165,14 +165,14 @@ def train_func(config):
     show_example_results(train_loader, net, worker_batch_size)
 
 
-def train_cifar10(num_workers=2, use_gpu=False):
+def train_cifar10(num_workers, use_gpu):
     trainer = TorchTrainer(
         train_loop_per_worker=train_func,
         train_loop_config={
             "lr": 0.001,
             "momentum": 0.9,
             "batch_size": 32,
-            "epochs": 1
+            "epochs": 3
         },
         scaling_config=ScalingConfig(num_workers=num_workers, use_gpu=use_gpu),
     )
@@ -182,5 +182,5 @@ def train_cifar10(num_workers=2, use_gpu=False):
 
 if __name__ == "__main__":
     ray.init()
-    train_cifar10()
+    train_cifar10(num_workers=2, use_gpu=False)
     ray.shutdown()
