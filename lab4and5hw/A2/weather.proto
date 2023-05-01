@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.weather";
+option java_outer_classname = "WeatherProto";
+option objc_class_prefix = "WTH";
+
+package weather;
+
+service WeatherSubscription {
+    rpc subscribe(SubscriptionRequest) returns (stream SubscriptionResponse) {}
+}
+
+enum WeatherInformation {
+    Temperature = 0;
+    Humidity = 1;
+}
+
+message SubscriptionRequest {
+    repeated WeatherInformation weatherInformation = 1;
+    string country = 2;
+}
+
+message SubscriptionResponse {
+    repeated WeatherInformation weatherInformation = 1;
+    string country = 2;
+}
