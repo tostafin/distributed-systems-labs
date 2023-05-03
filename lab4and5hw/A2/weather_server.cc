@@ -59,10 +59,14 @@ public:
         std::uniform_int_distribution<std::mt19937::result_type> dist10(1, 5);
         for (const auto& responseWeatherInformation : subscriptionResponses_)
         {
-            // Simulate response for the server
-            sleep(dist10(rng));
             const auto requestWeatherInformationTypes = request->weather_information().size();
-            int requestWeatherInformationTypesSatisfied = 0;
+            if (requestWeatherInformationTypes == 0)
+            {
+                return Status{StatusCode::INVALID_ARGUMENT,
+                    "You must set at least one of the weather information types."
+                };
+            }
+            auto satisfiedRequestWeatherInformationTypes = decltype(requestWeatherInformationTypes){0};
             
             for (const auto& requestWeatherInformationType : request->weather_information())
             {
@@ -73,7 +77,7 @@ public:
                         if (request->min_temperature() <= responseWeatherInformation.temperature() &&
                             request->max_temperature() >= responseWeatherInformation.temperature())
                         {
-                            ++requestWeatherInformationTypesSatisfied;
+                            ++satisfiedRequestWeatherInformationTypes;
                         }
                         else
                         {
@@ -84,7 +88,7 @@ public:
                     {
                         if (request->min_temperature() <= responseWeatherInformation.temperature())
                         {
-                            ++requestWeatherInformationTypesSatisfied;
+                            ++satisfiedRequestWeatherInformationTypes;
                         }
                         else
                         {
@@ -95,7 +99,7 @@ public:
                     {
                         if (request->max_temperature() >= responseWeatherInformation.temperature())
                         {
-                            ++requestWeatherInformationTypesSatisfied;
+                            ++satisfiedRequestWeatherInformationTypes;
                         }
                         else
                         {
@@ -109,6 +113,7 @@ public:
                         };
                     }
                 }
+
                 else if (requestWeatherInformationType == WeatherInformation::Humidity)
                 {
                     if (request->has_min_humidity() && request->has_max_humidity())
@@ -116,7 +121,7 @@ public:
                         if (request->min_humidity() <= responseWeatherInformation.humidity() &&
                             request->max_humidity() >= responseWeatherInformation.humidity())
                         {
-                            ++requestWeatherInformationTypesSatisfied;
+                            ++satisfiedRequestWeatherInformationTypes;
                         }
                         else
                         {
@@ -127,7 +132,7 @@ public:
                     {
                         if (request->min_humidity() <= responseWeatherInformation.humidity())
                         {
-                            ++requestWeatherInformationTypesSatisfied;
+                            ++satisfiedRequestWeatherInformationTypes;
                         }
                         else
                         {
@@ -138,7 +143,7 @@ public:
                     {
                         if (request->max_humidity() >= responseWeatherInformation.humidity())
                         {
-                            ++requestWeatherInformationTypesSatisfied;
+                            ++satisfiedRequestWeatherInformationTypes;
                         }
                         else
                         {
@@ -153,7 +158,11 @@ public:
                     }
                 }
             }
-            if (requestWeatherInformationTypes == requestWeatherInformationTypesSatisfied)
+
+            // Simulate response for the server
+            sleep(dist10(rng));
+
+            if (requestWeatherInformationTypes == satisfiedRequestWeatherInformationTypes)
             {
                 response->Write(responseWeatherInformation);
             }
