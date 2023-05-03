@@ -1,8 +1,10 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
+#include <random>
+#include <algorithm>
 #include <stdlib.h>
-
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
@@ -15,18 +17,152 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerWriter;
 using grpc::Status;
+using grpc::StatusCode;
 using weather::WeatherSubscription;
 using weather::SubscriptionRequest;
 using weather::SubscriptionResponse;
+using weather::WeatherInformation;
 
 class WeatherImpl final : public WeatherSubscription::Service
 {
-    Status subscribe(ServerContext* context, const SubscriptionRequest* request,
-                     ServerWriter<SubscriptionResponse>* reply) override
+public:
+    WeatherImpl()
     {
-        sleep(10);
+        auto weatherInPoland = SubscriptionResponse();
+        weatherInPoland.set_country("Poland");
+        weatherInPoland.set_temperature(20);
+        weatherInPoland.set_humidity(60);
+
+        auto weatherInGermany = SubscriptionResponse();
+        weatherInGermany.set_country("Germany");
+        weatherInGermany.set_temperature(10);
+        weatherInGermany.set_humidity(90);
+
+        auto weatherInSpain = SubscriptionResponse();
+        weatherInSpain.set_country("Spain");
+        weatherInSpain.set_temperature(35);
+        weatherInSpain.set_humidity(20);
+
+        subscriptionResponses_ = {
+            weatherInPoland,
+            weatherInGermany,
+            weatherInSpain
+        };
+    }
+                    // std::cout << responseWeatherInformation.country() << ", temp: " << responseWeatherInformation.temperature() << "\n";
+                    // std::cout << "Min temp: " << request->min_temperature() << ", max temp: " << request->max_temperature() << "\n";
+    Status subscribe(ServerContext* context, const SubscriptionRequest* request,
+                     ServerWriter<SubscriptionResponse>* response) override
+    {
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist10(1, 5);
+        for (const auto& responseWeatherInformation : subscriptionResponses_)
+        {
+            // Simulate response for the server
+            sleep(dist10(rng));
+            const auto requestWeatherInformationTypes = request->weather_information().size();
+            int requestWeatherInformationTypesSatisfied = 0;
+            
+            for (const auto& requestWeatherInformationType : request->weather_information())
+            {
+                if (requestWeatherInformationType == WeatherInformation::Temperature)
+                {
+                    if (request->has_min_temperature() && request->has_max_temperature())
+                    {
+                        if (request->min_temperature() <= responseWeatherInformation.temperature() &&
+                            request->max_temperature() >= responseWeatherInformation.temperature())
+                        {
+                            ++requestWeatherInformationTypesSatisfied;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else if (request->has_min_temperature())
+                    {
+                        if (request->min_temperature() <= responseWeatherInformation.temperature())
+                        {
+                            ++requestWeatherInformationTypesSatisfied;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else if (request->has_max_temperature())
+                    {
+                        if (request->max_temperature() >= responseWeatherInformation.temperature())
+                        {
+                            ++requestWeatherInformationTypesSatisfied;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        return Status{StatusCode::INVALID_ARGUMENT,
+                            "You must set at least one of the following: 'min_temperature', 'max_temperature'."
+                        };
+                    }
+                }
+                else if (requestWeatherInformationType == WeatherInformation::Humidity)
+                {
+                    if (request->has_min_humidity() && request->has_max_humidity())
+                    {
+                        if (request->min_humidity() <= responseWeatherInformation.humidity() &&
+                            request->max_humidity() >= responseWeatherInformation.humidity())
+                        {
+                            ++requestWeatherInformationTypesSatisfied;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else if (request->has_min_humidity())
+                    {
+                        if (request->min_humidity() <= responseWeatherInformation.humidity())
+                        {
+                            ++requestWeatherInformationTypesSatisfied;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else if (request->has_max_humidity())
+                    {
+                        if (request->max_humidity() >= responseWeatherInformation.humidity())
+                        {
+                            ++requestWeatherInformationTypesSatisfied;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        return Status{StatusCode::INVALID_ARGUMENT,
+                            "You must set at least one of the following: 'min_humidity', 'max_humidity'."
+                        };
+                    }
+                }
+            }
+            if (requestWeatherInformationTypes == requestWeatherInformationTypesSatisfied)
+            {
+                response->Write(responseWeatherInformation);
+            }
+        }
         return Status::OK;
     }
+
+private:
+    std::vector<SubscriptionResponse> subscriptionResponses_;
 };
 
 void runServer(const uint16_t port)

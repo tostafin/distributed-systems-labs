@@ -27,16 +27,21 @@ public:
         ClientContext context;
 
         // Data we are sending to the server.
-        SubscriptionRequest request;
-        request.add_weatherinformation(WeatherInformation::Temperature);
-        request.add_weatherinformation(WeatherInformation::Humidity);
+        SubscriptionRequest subscriptionRequest;
+        subscriptionRequest.add_weather_information(WeatherInformation::Temperature);
+        // subscriptionRequest.add_weather_information(WeatherInformation::Humidity);
+
+        subscriptionRequest.set_min_temperature(5);
+        subscriptionRequest.set_max_temperature(15);
 
         // Container for the data we expect from the server.
-        std::unique_ptr<ClientReader<SubscriptionResponse> > reader{stub_->subscribe(&context, request)};
+        std::unique_ptr<ClientReader<SubscriptionResponse>> reader{stub_->subscribe(&context, subscriptionRequest)};
         SubscriptionResponse subscriptionResponse;
         while (reader->Read(&subscriptionResponse))
         {
-            std::cout << "Found country called " << subscriptionResponse.country() << std::endl;
+            std::cout << "Found a country named " << subscriptionResponse.country()
+            << " with temperature " << subscriptionResponse.temperature() << "°C and humidity "
+            << subscriptionResponse.humidity() << "%.\n";
         }
 
         // The actual RPC.
@@ -48,7 +53,7 @@ public:
         }
         else
         {
-            std::cout << status.error_code() << ": " << status.error_message() << std::endl;
+            std::cout << "Error code " << status.error_code() << ": " << status.error_message() << std::endl;
         }
     }
 
@@ -56,7 +61,8 @@ private:
     std::unique_ptr<WeatherSubscription::Stub> stub_;
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     // Instantiate the client. It requires a channel, out of which the actual RPCs
     // are created. This channel models a connection to an endpoint specified by
     // the argument "--target=" which is the only expected argument.
