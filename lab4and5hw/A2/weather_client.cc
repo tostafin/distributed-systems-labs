@@ -26,9 +26,9 @@ public:
     void subscribe(const std::optional<int32_t>& minTemperature, const std::optional<int32_t>& maxTemperature,
                    const std::optional<uint32_t>& minHumidity, const std::optional<uint32_t>& maxHumidity)
     {
-        // Context for the client. It could be used to convey extra information to
-        // the server and/or tweak certain RPC behaviors.
+        // Context for the client.
         ClientContext context;
+        context.set_wait_for_ready(true);
 
         // Data we are sending to the server.
         SubscriptionRequest subscriptionRequest;
@@ -158,7 +158,13 @@ int main(int argc, char** argv)
         
     }
 
-    WeatherClient client{grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials())};
+    // We ping every 10 seconds to persist NAT/PAT table entries.
+    grpc::ChannelArguments channelArguments;
+    channelArguments.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 10000);
+    channelArguments.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000);
+    channelArguments.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
+    const auto& channel = grpc::CreateCustomChannel("localhost:50051", grpc::InsecureChannelCredentials(), channelArguments);
+    WeatherClient client{channel};
     client.subscribe(minTemperature, maxTemperature, minHumidity, maxHumidity);
 
     return 0;
