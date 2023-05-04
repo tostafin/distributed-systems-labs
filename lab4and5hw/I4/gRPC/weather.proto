@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.weather";
+option java_outer_classname = "WeatherProto";
+option objc_class_prefix = "WTH";
+
+package weather;
+
+service WeatherSubscription {
+    rpc subscribe(SubscriptionRequest) returns (stream SubscriptionResponse) {}
+}
+
+enum WeatherInformation {
+    Temperature = 0;
+    Humidity = 1;
+}
+
+message SubscriptionRequest {
+    repeated WeatherInformation weather_information = 1;
+    optional sint32 min_temperature = 2;
+    optional sint32 max_temperature = 3;
+    optional int32 min_humidity = 4;
+    optional int32 max_humidity = 5;
+}
+
+message SubscriptionResponse {
+    repeated WeatherInformation weather_information = 1;
+    string country = 2;
+    optional sint32 temperature = 3;
+    optional int32 humidity = 4;
+}
