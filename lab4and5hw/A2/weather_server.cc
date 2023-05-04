@@ -49,8 +49,7 @@ public:
             weatherInSpain
         };
     }
-                    // std::cout << responseWeatherInformation.country() << ", temp: " << responseWeatherInformation.temperature() << "\n";
-                    // std::cout << "Min temp: " << request->min_temperature() << ", max temp: " << request->max_temperature() << "\n";
+
     Status subscribe(ServerContext* context, const SubscriptionRequest* request,
                      ServerWriter<SubscriptionResponse>* response) override
     {
