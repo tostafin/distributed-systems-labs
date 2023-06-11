@@ -44,11 +44,11 @@ public class Carrier {
         channel.exchangeDeclare(Settings.EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
 
         // queue & bind
-        final var firstQueueName = channel.queueDeclare().getQueue();
+        final var firstQueueName = channel.queueDeclare(firstDeliveryType, false, false, false, null).getQueue();
         channel.queueBind(firstQueueName, Settings.EXCHANGE_NAME, "*.delivery." + firstDeliveryType);
         System.out.println("Created a queue for the first delivery type: " + firstQueueName);
 
-        final var secondQueueName = channel.queueDeclare().getQueue();
+        final var secondQueueName = channel.queueDeclare(secondDeliveryType, false, false, false, null).getQueue();
         channel.queueBind(secondQueueName, Settings.EXCHANGE_NAME, "*.delivery." + secondDeliveryType);
         System.out.println("Created a queue for the second delivery type: " + secondQueueName);
 
