@@ -3,7 +3,7 @@ import subprocess
 import kazoo.exceptions
 from kazoo.client import KazooClient
 
-zk = KazooClient(hosts="127.0.0.1:2181")
+zk = KazooClient(hosts="127.0.0.1:2182")  # 2181 reserved for zkCli
 
 pid = -1
 
@@ -30,7 +30,8 @@ def create_znode_child(child_name):
 
 
 def print_all_znodes(curr_znode="/z"):
-    print(curr_znode)
+    if zk.exists(curr_znode):
+        print(curr_znode)
     try:
         if zk.get_children(curr_znode):
             for child in zk.get_children(curr_znode):
