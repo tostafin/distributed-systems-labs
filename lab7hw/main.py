@@ -3,7 +3,7 @@ import subprocess
 import kazoo.exceptions
 from kazoo.client import KazooClient
 
-zk = KazooClient(hosts="127.0.0.1:2182")  # 2181 reserved for zkCli
+zk = KazooClient(hosts="127.0.0.1:2183")  # 2181, 2182 reserved for zkCli
 
 pid = -1
 
